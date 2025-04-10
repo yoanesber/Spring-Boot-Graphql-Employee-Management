@@ -57,7 +57,7 @@ graphql-employee-management/
 
 ## ⚙ Environment Configuration  
 
-The application uses externalized configuration via Spring Boot's application.properties file, leveraging environment variables to support flexible deployment across different environments (development, staging, production, etc.).  
+The application uses externalized configuration via Spring Boot's `application.properties` file, leveraging environment variables to support flexible deployment across different environments (development, staging, production, etc.).  
 
 Below is a breakdown of the key configurations:  
 
@@ -740,7 +740,6 @@ mutation SaveEmployee {
 **Request:**  
 
 ```graphql
-# Write your query or mutation here
 mutation SaveEmployee {
     saveEmployee(
         employeeCreateDTO: {
@@ -784,25 +783,30 @@ mutation SaveEmployee {
 
 ```
 
-
 **Response:**  
 
 ```json
 {
     "errors": [
         {
-            "message": "Validation error (WrongType@[saveEmployee]) : argument 'employeeCreateDTO.firstName' with value 'NullValue{}' must not be null",
+            "message": "[saveEmployee.employeeCreateDTO.firstName] First Name cannot be blank",
             "locations": [
                 {
-                    "line": 4,
-                    "column": 9
+                    "line": 3,
+                    "column": 5
                 }
+            ],
+            "path": [
+                "saveEmployee"
             ],
             "extensions": {
                 "classification": "ValidationError"
             }
         }
-    ]
+    ],
+    "data": {
+        "saveEmployee": null
+    }
 }
 ```
 
@@ -929,10 +933,6 @@ query GetEmployeeById {
 
 ```
 
-
-**Successful Response:**  
-
-```json
 
 **Successful Response:**  
 

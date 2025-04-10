@@ -36,47 +36,47 @@ type EmployeeDTO {
 }
 
 input DepartmentEmployeeInputDTO {
-    departmentId: String!
-    fromDate: Date!
-    toDate: Date!
+    departmentId: String
+    fromDate: Date
+    toDate: Date
 }
 
 input SalaryEmployeeInputDTO {
-    amount: Long!
-    fromDate: Date!
-    toDate: Date!
+    amount: Long
+    fromDate: Date
+    toDate: Date
 }
 
 input TitleEmployeeInputDTO {
-    title: String!
-    fromDate: Date!
-    toDate: Date!
+    title: String
+    fromDate: Date
+    toDate: Date
 }
 
 input EmployeeCreateDTO {
-    birthDate: Date!
-    firstName: String!
+    birthDate: Date
+    firstName: String
     lastName: String
-    gender: String!
-    hireDate: Date!
-    activeStatus: Boolean!
-    createdBy: Long!
-    departments: [DepartmentEmployeeInputDTO!]!
-    salaries: [SalaryEmployeeInputDTO!]!
-    titles: [TitleEmployeeInputDTO!]!
+    gender: String
+    hireDate: Date
+    activeStatus: Boolean
+    createdBy: Long
+    departments: [DepartmentEmployeeInputDTO]
+    salaries: [SalaryEmployeeInputDTO]
+    titles: [TitleEmployeeInputDTO]
 }
 
 input EmployeeUpdateDTO {
-    birthDate: Date!
-    firstName: String!
+    birthDate: Date
+    firstName: String
     lastName: String
-    gender: String!
-    hireDate: Date!
-    activeStatus: Boolean!
-    updatedBy: Long!
-    departments: [DepartmentEmployeeInputDTO!]!
-    salaries: [SalaryEmployeeInputDTO!]!
-    titles: [TitleEmployeeInputDTO!]!
+    gender: String
+    hireDate: Date
+    activeStatus: Boolean
+    updatedBy: Long
+    departments: [DepartmentEmployeeInputDTO]
+    salaries: [SalaryEmployeeInputDTO]
+    titles: [TitleEmployeeInputDTO]
 }
 
 extend type Query {
