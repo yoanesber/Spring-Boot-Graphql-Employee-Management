@@ -184,7 +184,7 @@ cd Spring-Boot-Graphql-Employee-Management
 
 The application connects to a PostgreSQL database for persistent storage of employee, department, salary, and title data.
 
-- Run the provided DDL script to set up the database schema
+- Run the provided DDL script to set up the database schema  
 - Ensure the following environment variables are defined before starting the application:  
 
 ```properties
@@ -198,7 +198,7 @@ Once configured, make sure the PostgreSQL instance is running and accessible bef
 
 3. API Key Configuration  
 
-To secure access to the GraphQL API, the application requires an API key to be included in each request via the `X-API-KEY` header.
+To secure access to the GraphQL API, the application requires an API key to be included in each request via the `X-API-KEY` header.  
 
 ```properties
 # API configuration
@@ -207,7 +207,8 @@ app.api.key=${APP_API_KEY}
 
 Make sure to set the `APP_API_KEY` environment variable in your local environment, `.env` file, or deployment platform. Requests without a valid API key will receive an authorization error.  
 
-4. Run the application locally
+4. Run the application locally  
+
 Make sure PostgreSQL is running, then execute:  
 
 ```bash
