@@ -1389,5 +1389,5 @@ Implement **GraphQL subscriptions** to enable real-time notifications when an em
 
 ## 🔗 Related Repositories  
 
-- REST Api Repository, check out [REST API Spring Boot One To Many example with Hibernate and PostgreSQL](https://github.com/yoanesber/Spring-Boot-Hibernate-One-To-Many-PostgreSQL).
-- REST API with JWT Authentication Repository, check out [Netflix Shows REST API with JWT Authentication](https://github.com/yoanesber/Spring-Boot-JWT-Auth-PostgreSQL).
+- REST API + PostgreSQL Repository, check out [REST API Spring Boot One To Many example with Hibernate and PostgreSQL](https://github.com/yoanesber/Spring-Boot-Hibernate-One-To-Many-PostgreSQL).
+- REST API + JWT Authentication Repository, check out [Netflix Shows REST API with JWT Authentication](https://github.com/yoanesber/Spring-Boot-JWT-Auth-PostgreSQL).
