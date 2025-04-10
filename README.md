@@ -341,6 +341,10 @@ mutation SaveDepartment {
 
 2. Get All Departments  
 
+✅ Full Fields Retrieval  
+
+You can request all available fields for each department.  
+
 **Request:**  
 
 ```graphql
@@ -380,6 +384,41 @@ query GetAllDepartments {
                 "createdDate": "2024-10-07T17:51:24.616Z",
                 "updatedBy": 1,
                 "updatedDate": "2024-10-07T17:51:24.616Z"
+            },
+            ...
+        ]
+    }
+}
+```
+
+✅ Partial Fields Retrieval  
+
+**GraphQL** allows you to **fetch only the fields you need**, reducing unnecessary data transfer and improving performance.  
+
+**Request (only id and deptName):**  
+
+```graphql
+query GetAllDepartments {
+    getAllDepartments {
+        id
+        deptName
+    }
+}
+```
+
+**Response:**  
+
+```json
+{
+    "data": {
+        "getAllDepartments": [
+            {
+                "id": "d001",
+                "deptName": "Marketing"
+            },
+            {
+                "id": "d002",
+                "deptName": "Finance"
             },
             ...
         ]
@@ -813,6 +852,10 @@ mutation SaveEmployee {
 
 2. Get All Employees  
 
+✅ Full Fields Retrieval  
+
+You can request all available fields for each employee.  
+
 **Request:**  
 
 ```graphql
@@ -886,6 +929,60 @@ query GetAllEmployees {
                         "title": "Senior Engineer",
                         "fromDate": "2000-01-01",
                         "toDate": "2005-12-31"
+                    }
+                ]
+            },
+            ...
+        ]
+    }
+}
+```
+
+✅ Partial Fields Retrieval  
+
+**GraphQL** allows you to **fetch only the fields you need**, reducing unnecessary data transfer and improving performance.  
+
+**Request (only id, firstName, departments):**  
+
+```graphql
+query GetAllEmployees {
+    getAllEmployees {
+        id
+        firstName
+        departments {
+            departmentId
+            fromDate
+            toDate
+        }
+    }
+}
+```
+
+**Response:**  
+
+```json
+{
+    "data": {
+        "getAllEmployees": [
+            {
+                "id": 10001,
+                "firstName": "Jenny",
+                "departments": [
+                    {
+                        "departmentId": "d002",
+                        "fromDate": "2025-01-01",
+                        "toDate": "2025-03-30"
+                    }
+                ]
+            },
+            {
+                "id": 10002,
+                "firstName": "Bezalel",
+                "departments": [
+                    {
+                        "departmentId": "d010",
+                        "fromDate": "2024-01-01",
+                        "toDate": "2024-09-30"
                     }
                 ]
             },
@@ -1263,6 +1360,29 @@ mutation DeleteEmployee {
     }
 }
 ```
+
+---
+
+## 📝 Notes & Future Enhancements  
+
+### Current Notes  
+
+- This project is a backend-focused API, intended to manage **Employees** and their relationships with **Departments, Salaries, and Titles** using **GraphQL**.  
+- All operations are protected by a lightweight API key mechanism using the `X-API-KEY` header.  
+- The schema and DTOs are kept clean and follow **GraphQL best practices** for separation of input and output types.  
+- DTO input fields are validated using **Java Bean Validation (JSR-380)** annotations such as `@NotBlank`, `@NotNull`, and custom constraints to ensure data integrity at the API level.  
+- Validation errors are consistently handled through a custom `GraphQLExceptionConfig`, which transforms exceptions into structured and informative GraphQL error responses.  
+- Clean architecture and clear separation of concerns are implemented using service layers, DTO mappings, and repository abstraction.  
+
+### Planned Enhancements  
+
+- **OAuth2 / JWT Security Integration**  
+
+Replace the static API key mechanism with **OAuth2** or **JWT-based authentication** using Spring Security. This will enhance scalability, token expiration control, and multi-user access management.  
+
+- **GraphQL Subscriptions**  
+
+Implement **GraphQL subscriptions** to enable real-time notifications when an employee is created, updated, or deleted. This would be useful for reactive client-side applications.  
 
 ---
 
