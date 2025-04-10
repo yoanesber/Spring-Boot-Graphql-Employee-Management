@@ -1,0 +1,32 @@
+package com.yoanesber.graphql_employee_management.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/*
+ * DepartmentUpdateDTO is a Data Transfer Object (DTO) used for updating existing department records.
+ * It contains fields that are required when updating a department, along with validation annotations.
+ * The class uses Lombok annotations to reduce boilerplate code for getters, setters, and constructors.
+ */
+
+@Data
+@Getter
+@Setter
+@NoArgsConstructor // Required for Jackson deserialization when receiving JSON requests.
+@AllArgsConstructor // Helps create DTO objects easily (useful when converting from entities).
+public class DepartmentUpdateDTO {
+
+    @NotBlank(message = "Department Name cannot be blank")
+    private String deptName;
+
+    @NotNull(message = "Active status cannot be null")
+    private Boolean active;
+
+    @NotNull(message = "Department Updated By cannot be null")
+    private Long updatedBy;
+}

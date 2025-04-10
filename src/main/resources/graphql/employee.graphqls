@@ -1,0 +1,91 @@
+scalar Date
+
+type DepartmentEmployeeDTO {
+    departmentId: String
+    fromDate: String
+    toDate: String
+}
+
+type SalaryEmployeeDTO {
+    amount: Long
+    fromDate: String
+    toDate: String
+}
+
+type TitleEmployeeDTO {
+    title: String
+    fromDate: String
+    toDate: String
+}
+
+type EmployeeDTO {
+    id: Long
+    birthDate: String
+    firstName: String
+    lastName: String
+    gender: String
+    hireDate: String
+    activeStatus: Boolean
+    createdBy: Long
+    createdDate: DateTime
+    updatedBy: Long
+    updatedDate: DateTime
+    departments: [DepartmentEmployeeDTO]
+    salaries: [SalaryEmployeeDTO]
+    titles: [TitleEmployeeDTO]
+}
+
+input DepartmentEmployeeInputDTO {
+    departmentId: String!
+    fromDate: Date!
+    toDate: Date!
+}
+
+input SalaryEmployeeInputDTO {
+    amount: Long!
+    fromDate: Date!
+    toDate: Date!
+}
+
+input TitleEmployeeInputDTO {
+    title: String!
+    fromDate: Date!
+    toDate: Date!
+}
+
+input EmployeeCreateDTO {
+    birthDate: Date!
+    firstName: String!
+    lastName: String
+    gender: String!
+    hireDate: Date!
+    activeStatus: Boolean!
+    createdBy: Long!
+    departments: [DepartmentEmployeeInputDTO!]!
+    salaries: [SalaryEmployeeInputDTO!]!
+    titles: [TitleEmployeeInputDTO!]!
+}
+
+input EmployeeUpdateDTO {
+    birthDate: Date!
+    firstName: String!
+    lastName: String
+    gender: String!
+    hireDate: Date!
+    activeStatus: Boolean!
+    updatedBy: Long!
+    departments: [DepartmentEmployeeInputDTO!]!
+    salaries: [SalaryEmployeeInputDTO!]!
+    titles: [TitleEmployeeInputDTO!]!
+}
+
+extend type Query {
+    getAllEmployees: [EmployeeDTO]
+    getEmployeeById(id: ID!): EmployeeDTO
+}
+
+extend type Mutation {
+  saveEmployee(employeeCreateDTO: EmployeeCreateDTO!): EmployeeDTO
+  updateEmployee(id: ID!, employeeUpdateDTO: EmployeeUpdateDTO!): EmployeeDTO
+  deleteEmployee(id: ID!): Boolean
+}
