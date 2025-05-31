@@ -25,11 +25,7 @@ type EmployeeDTO {
     lastName: String
     gender: String
     hireDate: String
-    activeStatus: Boolean
-    createdBy: Long
-    createdDate: DateTime
-    updatedBy: Long
-    updatedDate: DateTime
+    active: Boolean
     departments: [DepartmentEmployeeDTO]
     salaries: [SalaryEmployeeDTO]
     titles: [TitleEmployeeDTO]
@@ -53,26 +49,14 @@ input TitleEmployeeInputDTO {
     toDate: Date
 }
 
-input EmployeeCreateDTO {
+input EmployeeInputDTO {
     birthDate: Date
     firstName: String
     lastName: String
     gender: String
     hireDate: Date
-    activeStatus: Boolean
+    active: Boolean
     createdBy: Long
-    departments: [DepartmentEmployeeInputDTO]
-    salaries: [SalaryEmployeeInputDTO]
-    titles: [TitleEmployeeInputDTO]
-}
-
-input EmployeeUpdateDTO {
-    birthDate: Date
-    firstName: String
-    lastName: String
-    gender: String
-    hireDate: Date
-    activeStatus: Boolean
     updatedBy: Long
     departments: [DepartmentEmployeeInputDTO]
     salaries: [SalaryEmployeeInputDTO]
@@ -85,7 +69,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  saveEmployee(employeeCreateDTO: EmployeeCreateDTO!): EmployeeDTO
-  updateEmployee(id: ID!, employeeUpdateDTO: EmployeeUpdateDTO!): EmployeeDTO
+  saveEmployee(input: EmployeeInputDTO!): EmployeeDTO
+  updateEmployee(id: ID!, input: EmployeeInputDTO!): EmployeeDTO
   deleteEmployee(id: ID!): Boolean
 }

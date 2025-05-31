@@ -1,18 +1,18 @@
 package com.yoanesber.graphql_employee_management.controller;
 
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 
-import com.yoanesber.graphql_employee_management.dto.EmployeeCreateDTO;
+import com.yoanesber.graphql_employee_management.dto.EmployeeInputDTO;
 import com.yoanesber.graphql_employee_management.dto.EmployeeDTO;
-import com.yoanesber.graphql_employee_management.dto.EmployeeUpdateDTO;
+import com.yoanesber.graphql_employee_management.mapper.EmployeeMapper;
 import com.yoanesber.graphql_employee_management.service.EmployeeService;
 
 /**
@@ -27,25 +27,33 @@ import com.yoanesber.graphql_employee_management.service.EmployeeService;
 public class EmployeeGraphQLController {
     private final EmployeeService employeeService;
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
     public EmployeeGraphQLController(EmployeeService employeeService) {
         this.employeeService = employeeService;
     }
 
     @MutationMapping
-    public EmployeeDTO saveEmployee(@Valid @Argument EmployeeCreateDTO employeeCreateDTO) {
-        // Check if the input is null
-        if (employeeCreateDTO == null) {
-            logger.error("EmployeeCreateDTO is null");
-            throw new IllegalArgumentException("EmployeeCreateDTO cannot be null");
+    public EmployeeDTO saveEmployee(@Valid @Argument EmployeeInputDTO input) {
+        if (input == null) {
+            throw new IllegalArgumentException("Employee body request cannot be null");
         }
 
         try {
-            // Save and return employee
-            return employeeService.saveEmployee(employeeCreateDTO);
+            EmployeeDTO createdEmployee = EmployeeMapper.toDTO(
+                employeeService.saveEmployee(
+                    EmployeeMapper.toEntity(input)
+                )
+            );
+            
+            if (createdEmployee == null) {
+                throw new RuntimeException("Failed to create employee");
+            }
+
+            return createdEmployee;
+        } catch (EntityExistsException e) {
+            throw new RuntimeException(e.getMessage());
+        } catch (EntityNotFoundException e) {
+            throw new RuntimeException(e.getMessage());
         } catch (Exception e) {
-            logger.error("Error saving employee: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -53,61 +61,81 @@ public class EmployeeGraphQLController {
     @QueryMapping
     public List<EmployeeDTO> getAllEmployees() {
         try {
-            // Get all employees
-            return employeeService.getAllEmployees();
+            List<EmployeeDTO> employees = EmployeeMapper.toDTOList(
+                employeeService.getAllEmployees()
+            );
+
+            if (employees == null || employees.isEmpty()) {
+                throw new RuntimeException("No employees found");
+            }
+
+            return employees;
         } catch (Exception e) {
-            logger.error("Error fetching all employees: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @QueryMapping
     public EmployeeDTO getEmployeeById(@Argument Long id) {
-        // Check if the id is null
         if (id == null) {
-            logger.error("Employee ID is null");
-            throw new IllegalArgumentException("Employee ID cannot be null");
+            throw new IllegalArgumentException("Employee id cannot be null");
         } 
 
         try {
-            // Get employee by id
-            return employeeService.getEmployeeById(id);
+            EmployeeDTO employee = EmployeeMapper.toDTO(
+                employeeService.getEmployeeById(id)
+            );
+
+            if (employee == null) {
+                throw new RuntimeException("Employee not found with id: " + id);
+            }
+            
+            return employee;
         } catch (Exception e) {
-            logger.error("Error fetching employee by id: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @MutationMapping
-    public EmployeeDTO updateEmployee(@Argument Long id, @Valid @Argument EmployeeUpdateDTO employeeUpdateDTO) {
-        // Check if the id and employee are null
-        if (id == null || employeeUpdateDTO == null) {
-            logger.error("Employee ID or EmployeeUpdateDTO is null");
-            throw new IllegalArgumentException("Employee ID and EmployeeUpdateDTO cannot be null");
+    public EmployeeDTO updateEmployee(@Argument Long id, @Valid @Argument EmployeeInputDTO input) {
+        if (id == null) {
+            throw new IllegalArgumentException("Employee id cannot be null");
+        }
+
+        if (input == null) {
+            throw new IllegalArgumentException("Employee body request cannot be null");
         }
 
         try {
-            // Update employee
-            return employeeService.updateEmployee(id, employeeUpdateDTO);
+            EmployeeDTO updatedEmployee = EmployeeMapper.toDTO(
+                employeeService.updateEmployee(id, EmployeeMapper.toEntity(input))
+            );
+
+            if (updatedEmployee == null) {
+                throw new RuntimeException("Failed to update employee with id: " + id);
+            }
+
+            return updatedEmployee;
+        } catch (EntityNotFoundException e) {
+            throw new RuntimeException(e.getMessage());
         } catch (Exception e) {
-            logger.error("Error updating employee: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @MutationMapping
     public Boolean deleteEmployee(@Argument Long id) {
-        // Check if the id is null
         if (id == null) {
-            logger.error("Employee ID is null");
-            throw new IllegalArgumentException("Employee ID cannot be null");
+            throw new IllegalArgumentException("Employee id cannot be null");
         }
 
         try {
-            // Delete employee
-            return employeeService.deleteEmployee(id);
+            if (!employeeService.deleteEmployee(id)) {
+                throw new RuntimeException("Failed to delete employee with id: " + id);
+            }
+            
+            return true;
         } catch (Exception e) {
-            logger.error("Error deleting employee: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }

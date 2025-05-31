@@ -2,7 +2,29 @@
 
 ## 📖 Overview  
 
-A robust Spring Boot application that exposes **Employee and Department** data via a powerful **GraphQL API**. This service supports complex relationships, including **Employee-Department**, **Employee-Salary**, and **Employee-Title** associations. All API access is securely protected using an API Key passed in the request headers.  
+A robust Spring Boot application that exposes **Employee and Department** data via a powerful **GraphQL API** to handle CRUD operations for **Employee** and **Department** entities. 
+
+This project implements `One-To-Many` relationships between **Employee** as the parent entity and the child entities **DepartmentEmployee, SalaryEmployee, and TitleEmployee**. The relationship is managed using Spring Data JPA with Hibernate, and the project utilizes `EmbeddedId` for `composite primary keys` in the relationship tables.  
+
+### 🔗 Relationships  
+
+The following is the relationship between tables:  
+
+- Department ↔ DepartmentEmployee (`One-to-Many`)
+- Employee ↔ DepartmentEmployee (`One-to-Many`)
+- Employee ↔ SalaryEmployee (`One-to-Many`)
+- Employee ↔ TitleEmployee (`One-to-Many`)
+
+### 🔢 EmbeddedId  
+
+These tables are managed using `EmbeddedId` to define composite primary keys:  
+
+- department_employee (employee_id, department_id)
+- salary (employee_id, from_date)
+- title (employee_id, title, from_date)
+
+
+All API access is securely protected using an **API Key** passed via HTTP headers. This ensures that only authorized clients can access protected resources. The API expects an `X-API-KEY` header to be included in every request. If the API key is missing or invalid, the server will respond with `Unauthorized` message. This mechanism secures the **GraphQL endpoint (`/graphql`)** and any other sensitive routes by verifying the provided key against a pre-configured value stored securely in the application's configuration.  
 
 
 ### 💡 Why GraphQL ?  
@@ -23,209 +45,275 @@ These features make GraphQL a powerful alternative to REST, offering more effici
 
 The technology used in this project are:  
 
-- `Spring Boot Starter Web` – Provides the foundational web support for the application, enabling HTTP handling and server-side capabilities for GraphQL over HTTP.  
-- `Spring Boot Starter GraphQL` – Integrates GraphQL Java into the Spring ecosystem.  
-- `GraphQL Java Extended Scalars` – a library that provides additional scalar types for GraphQL Java, such as `DateTime`, `URL`, and `BigDecimal`.  
-- `Spring Boot Starter Validation` – Adds support for Java Bean Validation, ensuring the integrity of incoming request data through declarative annotations like `@NotNull`, `@Size`.  
-- `Spring Boot Starter Security` – Provides the necessary components for securing the application.  
-- `PostgreSQL` – Database for persisting employee, department, salary, and title data.  
-- `Hibernate` – Simplifying database interactions.  
-- `Lombok` – Reducing boilerplate code.  
+| Dependency                            | Description                                                                                                   |
+|---------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Spring Boot Starter Web**           | Provides foundational web support, enabling HTTP handling and server-side capabilities for GraphQL over HTTP. |
+| **Spring Boot Starter GraphQL**       | Integrates GraphQL Java into the Spring ecosystem.                                                            |
+| **GraphQL Java Extended Scalars**     | Provides additional scalar types such as `DateTime`, `URL`, and `BigDecimal` for GraphQL Java.                |
+| **Spring Boot Starter Validation**    | Adds support for Java Bean Validation via annotations like `@NotNull`, `@Size`.                               |
+| **Spring Boot Starter Security**      | Provides components for securing the application.                                                             |
+| **PostgreSQL**                        | Relational database for persisting employee, department, salary, and title data.                              |
+| **Hibernate**                         | Simplifies database interactions via ORM.                                                                     |
+| **Lombok**                            | Reduces boilerplate code through annotations.                                                                 |
 
 ---
 
-## 🏗️ Project Structure  
+## 🧱 Architecture Overview  
 
 The project is organized into the following package structure:  
 
 ```bash
-graphql-employee-management/
-│── src/main/java/com/yoanesber/graphql_employee_management/
-│   ├── 📂config/            # Configuration classes for GraphQL, Security, CORS, etc.
-│   ├── 📂controller/        # GraphQL resolvers for handling queries and mutations
-│   ├── 📂dto/               # Data Transfer Objects for request/response shaping
-│   ├── 📂entity/            # JPA entities representing tables in the database
-│   ├── 📂handler/           # Custom API key authentication filter and related logic
-│   ├── 📂repository/        # Spring Data JPA repositories for data access
-│   ├── 📂service/           # Service interfaces defining business logic contracts
-│   │   ├── 📂impl/          # Implementations of the service interfaces
-│── src/main/resources/
-│   ├── 📂graphql/           # GraphQL schema files (e.g., schema.graphqls)
-│   ├── application.properties  # Application configuration file (API key, DB, etc.)
+📁 graphql-employee-management/
+└── 📂src/
+    └── 📂main/
+        ├── 📂docker/
+        │   ├── 📂app/                     # Dockerfile for Spring Boot application (runtime container)
+        │   │   └── Dockerfile              # Uses base image, copies JAR/dependencies, defines ENTRYPOINT
+        │   └── 📂postgres/                # Custom PostgreSQL Docker image (optional)
+        │       ├── Dockerfile              # Extends from postgres:17, useful for init customization
+        │       └── init.sql                # SQL script to create database, user, and grant permissions
+        ├── 📂java/
+        │   ├── 📂config/
+        │   │   ├── 📂graphql/              # Configuration specific to GraphQL (e.g., scalars, schema wiring, error handling)
+        │   │   └── 📂security/             # Security-related configuration (e.g., API key filters, providers, SecurityFilterChain)
+        │   ├── 📂controller/               # REST API endpoints (e.g., EmployeeController, DepartmentController)
+        │   ├── 📂dto/                      # Data Transfer Objects for requests/responses
+        │   ├── 📂entity/                   # JPA entity classes mapped to database tables
+        │   ├── 📂mapper/                   # MapStruct or manual mappers between DTO and entity
+        │   ├── 📂repository/               # Spring Data JPA interfaces for database access
+        │   └── 📂service/                  # Business logic layer
+        │       └── 📂impl/                 # Service implementation classes
+        └── 📂resources/
+            ├── 📂graphql/                  # GraphQL schema definitions (`.graphqls`) used by the application
+            ├── application.properties       # Application configuration (DB, profiles, etc.)
+            └── import.sql                   # SQL file for seeding database on startup
 ```
----
-
-## ⚙ Environment Configuration  
-
-The application uses externalized configuration via Spring Boot's `application.properties` file, leveraging environment variables to support flexible deployment across different environments (development, staging, production, etc.).  
-
-Below is a breakdown of the key configurations:  
-
-```properties
-# Application environment variables
-spring.application.name=graphql-employee-management
-server.port=${APP_PORT}
-spring.profiles.active=${SPRING_PROFILES_ACTIVE}
-
-# Database configuration
-spring.datasource.url=jdbc:postgresql://localhost:${SPRING_DATASOURCE_PORT}/${SPRING_DATASOURCE_DB}?currentSchema=${SPRING_DATASOURCE_SCHEMA}
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
-
-# API configuration
-app.api.key=${APP_API_KEY}
-```
-
-You can configure these variables via a `.env` file, CI/CD pipeline, or your host system’s environment.
-
----
-
-## 💾 Database Schema (DDL – PostgreSQL)  
-
-The following is the database schema for the PostgreSQL database used in this project:  
-
-```sql
-CREATE SCHEMA your_schema;
-
--- table your_schema.employee
-CREATE TABLE IF NOT EXISTS your_schema.employee (
-    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
-    birth_date date NOT NULL,
-    first_name character varying(20) NOT NULL,
-    last_name character varying(20),
-    gender character varying(1) NOT NULL,
-    hire_date date NOT NULL,
-    active boolean DEFAULT false NOT NULL,
-    created_by bigint NOT NULL,
-    created_date timestamp with time zone DEFAULT now() NOT NULL,
-    updated_by bigint NOT NULL,
-    updated_date timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT employee_pkey PRIMARY KEY (id),
-);
-
--- table your_schema.department
-CREATE TABLE IF NOT EXISTS your_schema.department (
-    id character varying(4) NOT NULL,
-    dept_name character varying(40) NOT NULL,
-    active boolean NOT NULL,
-    created_by bigint NOT NULL,
-    created_date timestamp with time zone DEFAULT now() NOT NULL,
-    updated_by bigint NOT NULL,
-    updated_date timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT department_pkey PRIMARY KEY (id)
-);
-
--- table your_schema.department_employee
-CREATE TABLE IF NOT EXISTS your_schema.department_employee (
-    employee_id bigint NOT NULL,
-    department_id character varying(255) NOT NULL,
-    from_date date NOT NULL,
-    to_date date NOT NULL,
-    CONSTRAINT department_employee_pkey PRIMARY KEY (employee_id, department_id),
-    CONSTRAINT department_employee_fkey1 FOREIGN KEY (employee_id) REFERENCES your_schema.employee(id) ON UPDATE RESTRICT ON DELETE CASCADE,
-    CONSTRAINT department_employee_fkey2 FOREIGN KEY (department_id) REFERENCES your_schema.department(id) ON UPDATE RESTRICT ON DELETE CASCADE
-);
-
-
--- table your_schema.salary
-CREATE TABLE IF NOT EXISTS your_schema.salary (
-    employee_id bigint NOT NULL,
-    amount bigint NOT NULL,
-    from_date date NOT NULL,
-    to_date date NOT NULL,
-    CONSTRAINT salary_pkey PRIMARY KEY (employee_id, from_date),
-    CONSTRAINT salary_fkey FOREIGN KEY (employee_id) REFERENCES your_schema.employee(id) ON UPDATE RESTRICT ON DELETE CASCADE
-);
-
--- table your_schema.title
-CREATE TABLE IF NOT EXISTS your_schema.title (
-    employee_id bigint NOT NULL,
-    title character varying(50) NOT NULL,
-    from_date date NOT NULL,
-    to_date date,
-    CONSTRAINT title_pkey PRIMARY KEY (employee_id, title, from_date),
-    CONSTRAINT title_fkey FOREIGN KEY (employee_id) REFERENCES your_schema.employee(id) ON UPDATE RESTRICT ON DELETE CASCADE
-);
-
-```
-
-### 🔗 Relationships  
-
-The following is the relationship between tables:  
-
-- Department ↔ DepartmentEmployee (`One-to-Many`)
-- Employee ↔ DepartmentEmployee (`One-to-Many`)
-- Employee ↔ SalaryEmployee (`One-to-Many`)
-- Employee ↔ TitleEmployee (`One-to-Many`)
-
-### 🔢 EmbeddedId  
-
-These tables are managed using `EmbeddedId` to define composite primary keys:  
-
-- department_employee (employee_id, department_id)
-- salary (employee_id, from_date)
-- title (employee_id, title, from_date)
-
 ---
 
 
 ## 🛠️ Installation & Setup  
 
-To get started with the **Spring Boot GraphQL API for Employee & Department Management**, follow the steps below to configure your environment properly.  
+Follow these steps to set up and run the project locally:  
 
-1. Ensure you have **Git installed on your Windows** machine, then clone the repository to your local environment:  
+### ✅ Prerequisites
+
+Make sure the following tools are installed on your system:
+
+| Tool                                                                  | Description                                                   | Required      |
+|-----------------------------------------------------------------------|---------------------------------------------------------------|---------------|
+| [Java 17+](https://adoptium.net/)                                     | Java Development Kit (JDK) to run the Spring application      | ✅            |
+| [PostgreSQL](https://www.postgresql.org/)                             | Relational database to persist application data               | ✅            |
+| [Make](https://www.gnu.org/software/make/)                            | Automation tool for tasks like `make run-app`                 | ✅            |
+| [Docker](https://www.docker.com/)                                     | To run services like PostgreSQL in isolated containers        | ⚠️ *optional* |
+| [GraphQL Playground](https://github.com/graphql/graphql-playground)   | GUI tool to interactively test GraphQL queries and mutations  | ⚠️ *optional* |
+
+### ☕ 1. Install Java 17  
+
+1. Ensure **Java 17** is installed on your system. You can verify this with:  
+
+```bash
+java --version
+```  
+
+2. If Java is not installed, follow one of the methods below based on your operating system:  
+
+#### 🐧 Linux  
+
+**Using apt (Ubuntu/Debian-based)**:  
+
+```bash
+sudo apt update
+sudo apt install openjdk-17-jdk
+```  
+
+#### 🪟 Windows  
+1. Use [https://adoptium.net](https://adoptium.net) to download and install **Java 17 (Temurin distribution recommended)**.  
+
+2. After installation, ensure `JAVA_HOME` is set correctly and added to the `PATH`.  
+
+3. You can check this with:  
+
+```bash
+echo $JAVA_HOME
+```  
+
+### 🐘 2. Install PostgreSQL  
+1. Install PostgreSQL if it’s not already available on your machine:  
+    - Use [https://www.postgresql.org/download/](https://www.postgresql.org/download/) to download PostgreSQL.  
+
+2. Once installed, create the following databases:  
+```sql
+CREATE DATABASE employees;  
+```  
+
+These databases are used for development and automated testing, respectively.  
+
+### 🧰 3. Install `make` (Optional but Recommended)  
+This project uses a `Makefile` to streamline common tasks.  
+
+Install `make` if not already available:  
+
+#### 🐧 Linux  
+
+Install `make` using **APT**  
+
+```bash
+sudo apt update
+sudo apt install make
+```  
+
+You can verify installation with:   
+```bash
+make --version
+```  
+
+#### 🪟 Windows  
+
+If you're using **PowerShell**:  
+
+- Install [Chocolatey](https://chocolatey.org/install) (if not installed):  
+```bash
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+```  
+
+- Verify `Chocolatey` installation:  
+```bash
+choco --version
+```  
+
+- Install `make` via `Chocolatey`:  
+```bash
+choco install make
+```  
+
+After installation, **restart your terminal** or ensure `make` is available in your `PATH`.  
+
+### 🔁 4. Clone the Project  
+
+Clone the repository:  
 
 ```bash
 git clone https://github.com/yoanesber/Spring-Boot-Graphql-Employee-Management.git
 cd Spring-Boot-Graphql-Employee-Management
-```
+```  
 
-2. Set up PostgreSQL  
+### ⚙️ 5. Configure Application Properties  
 
-The application connects to a PostgreSQL database for persistent storage of employee, department, salary, and title data.
-
-- Run the provided DDL script to set up the database schema  
-- Ensure the following environment variables are defined before starting the application:  
+Set up your `application.properties` in `src/main/resources`:  
 
 ```properties
-# Database configuration
-spring.datasource.url=jdbc:postgresql://localhost:${SPRING_DATASOURCE_PORT}/${SPRING_DATASOURCE_DB}?currentSchema=${SPRING_DATASOURCE_SCHEMA}
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+# application configuration
+spring.application.name=graphql-employee-management
+server.port=8080
+spring.profiles.active=development
+
+## datasource configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/employees
+spring.datasource.username=appuser
+spring.datasource.password=app@123
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.sql.init.mode=always
+
+## hibernate configuration
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=true
+
+# API Key configuration
+spring.graphql.api-key=4e1f2d3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9
 ```
 
-Once configured, make sure the PostgreSQL instance is running and accessible before starting the Spring Boot application.  
+- **🔐 Notes**:  Ensure that:  
+  - Database URLs, username, and password are correct.  
+  - `spring.datasource.username=appuser`, `spring.datasource.password=app@123`: It's strongly recommended to create a dedicated database user instead of using the default postgres superuser.
 
-3. API Key Configuration  
 
-To secure access to the GraphQL API, the application requires an API key to be included in each request via the `X-API-KEY` header.  
+### 👤 6. Create Dedicated PostgreSQL User (Recommended)
 
+For security reasons, it's recommended to avoid using the default postgres superuser. Use the following SQL script to create a dedicated user (`appuser`) and assign permissions:
+
+```sql
+-- Create appuser and database
+CREATE USER appuser WITH PASSWORD 'app@123';
+
+-- Allow user to connect to database
+GRANT CONNECT ON DATABASE employees TO appuser;
+
+-- Grant permissions on public schema
+GRANT USAGE, CREATE ON SCHEMA public TO appuser;
+
+-- Grant all permissions on existing tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+
+-- Grant all permissions on sequences (if using SERIAL/BIGSERIAL ids)
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+-- Ensure future tables/sequences will be accessible too
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO appuser;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO appuser;
+```
+
+Update your `application.properties` accordingly:
 ```properties
-# API configuration
-app.api.key=${APP_API_KEY}
+spring.datasource.username=appuser
+spring.datasource.password=app@123
 ```
 
-Make sure to set the `APP_API_KEY` environment variable in your local environment, `.env` file, or deployment platform. Requests without a valid API key will receive an authorization error.  
 
-4. Run the application locally  
+## 🚀 7. Running the Application  
 
-Make sure PostgreSQL is running, then execute:  
+This section provides step-by-step instructions to run the application either **locally** or via **Docker containers**.
+
+- **Notes**:  
+  - All commands are defined in the `Makefile`.
+  - To run using `make`, ensure that `make` is installed on your system.
+  - To run the application in containers, make sure `Docker` is installed and running.
+
+
+### 🔧 Run Locally (Non-containerized)
+
+Ensure PostgreSQL are running locally, then:
 
 ```bash
-mvn spring-boot:run
+make dev
 ```
 
-5. The server will start at:  
+### 🐳 Run Using Docker
+
+To build and run all services (PostgreSQL, Spring app):
 
 ```bash
-http://localhost:8080/graphql
+make docker-start-all
+```
+
+To stop and remove all containers:
+
+```bash
+make docker-stop-all
+```
+
+- **Notes**:  
+  - Before running the application inside Docker, make sure to update your `application.properties`
+    - Replace `localhost` with the appropriate **container name** for services like PostgreSQL.  
+    - For example:
+      - Change `localhost:5432` to `graphql-postgres:5432`
+
+### 🟢 Application is Running
+
+Now your application is accessible at:
+```bash
+http://localhost:8080
 ```
 
 ---
 
 ## 🧪 Test the GraphQL API  
 
-Once the application is running (at http://localhost:8080/graphql), you can test the GraphQL API using tools like:  
+Once the application is running (at `http://localhost:8080/graphql`), you can test the GraphQL API using tools like:  
 
 - [GraphQL Playground](https://github.com/graphql/graphql-playground/releases)  
 - [Postman](https://www.postman.com/downloads)  
@@ -235,43 +323,55 @@ All GraphQL requests to this API must include a valid `X-API-KEY` header for aut
 
 **Headers:**  
 
-```http
-Content-Type: application/json
-X-API-KEY: your-api-key-here
+```json
+{
+  "X-API-KEY":"4e1f2d3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9a"
+}
 ```
 
 **Note:** If the API key is missing or invalid, the server will respond with an authentication error and deny access to the requested operation.  
 
-
-**Invalid or Missing API Key Response:**  
+**Missing API Key Response:**  
 
 ```json
 {
-    "error": "Unauthorized: Invalid or missing API key"
+  "error": {
+    "error": "Unauthorized: Missing API key"
+  }
 }
 ```
 
-### Department API Endpoints  
+**Invalid API Key Response:**  
 
-Apis to create, retrieve, update, delete Department.  
+```json
+{
+  "error": {
+    "error": "Unauthorized: Invalid API key"
+  }
+}
+```
 
-1. Save a New Department  
+All API operations are served through a single HTTP endpoint:
 
-**Request:**  
+```http
+http://localhost:8080/graphql
+```
+
+### 🏢 Department API  
+
+#### 1. Create new departments with valid data  
+
+**GraphQL Mutation:**  
 
 ```graphql
 mutation SaveDepartment {
-    saveDepartment(
-        departmentCreateDTO: { id: "d001", deptName: "Support", active: false, createdBy: "1" }
-    ) {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
+  saveDepartment(
+    input: { id: "d011", deptName: "Security", createdBy: "1", active: true }
+  ) {
+    id
+    deptName
+    active
+  }
 }
 ```
 
@@ -279,86 +379,29 @@ mutation SaveDepartment {
 
 ```json
 {
-    "data": {
-        "saveDepartment": {
-            "id": "d001",
-            "deptName": "Support",
-            "active": false,
-            "createdBy": 1,
-            "createdDate": "2025-04-10T13:25:39.874+07:00",
-            "updatedBy": 1,
-            "updatedDate": "2025-04-10T13:25:39.874+07:00"
-        }
+  "data": {
+    "saveDepartment": {
+      "id": "d011",
+      "deptName": "Security",
+      "active": true
     }
+  }
 }
 ```
 
-❌ Example: Duplicate Department ID  
+#### 2. Create new departments with existing data   
 
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation SaveDepartment {
-    saveDepartment(
-        departmentCreateDTO: { id: "d001", deptName: "Support", active: false, createdBy: "1" }
-    ) {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-**Response (Duplicate ID Error):**  
-
-```json
-{
-    "errors": [
-        {
-            "message": "Error saving department: Department with id d001 already exists",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "saveDepartment"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
-        }
-    ],
-    "data": {
-        "saveDepartment": null
-    }
-}
-```
-
-2. Get All Departments  
-
-✅ Full Fields Retrieval  
-
-You can request all available fields for each department.  
-
-**Request:**  
-
-```graphql
-query GetAllDepartments {
-    getAllDepartments {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
+  saveDepartment(
+    input: { id: "d011", deptName: "Security", createdBy: "1", active: true }
+  ) {
+    id
+    deptName
+    active
+  }
 }
 ```
 
@@ -366,82 +409,36 @@ query GetAllDepartments {
 
 ```json
 {
-    "data": {
-        "getAllDepartments": [
-            {
-                "id": "d001",
-                "deptName": "Marketing",
-                "active": true,
-                "createdBy": 1,
-                "createdDate": "2024-10-07T17:51:24.616Z",
-                "updatedBy": 1,
-                "updatedDate": "2024-11-11T16:58:30.929Z"
-            },
-            {
-                "id": "d002",
-                "deptName": "Finance",
-                "active": true,
-                "createdBy": 1,
-                "createdDate": "2024-10-07T17:51:24.616Z",
-                "updatedBy": 1,
-                "updatedDate": "2024-10-07T17:51:24.616Z"
-            },
-            ...
-        ]
+  "data": {
+    "saveDepartment": {
+      "id": "d011",
+      "deptName": "Security",
+      "active": true
     }
+  }
 }
 ```
 
-✅ Partial Fields Retrieval  
+**📝 Note**:
+The system internally handles cases where the provided department `id` already exists in the database:
+- The system will fetch the existing department record with the given ID.
+- It will then update the existing record's details using the values provided in the GraphQL mutation (`deptName`, `active`, etc.).
+- The `updatedBy` field will be set using the value of `createdBy` from the request.
+- If the ID **does not exist**, a new record will be created as usual.
 
-**GraphQL** allows you to **fetch only the fields you need**, reducing unnecessary data transfer and improving performance.  
+This approach provides a form of idempotent upsert behavior, where the request can act as either a create or update depending on the presence of the record.
 
-**Request (only id and deptName):**  
+#### 3. Retrieve all or specific departments by ID  
 
-```graphql
-query GetAllDepartments {
-    getAllDepartments {
-        id
-        deptName
-    }
-}
-```
-
-**Response:**  
-
-```json
-{
-    "data": {
-        "getAllDepartments": [
-            {
-                "id": "d001",
-                "deptName": "Marketing"
-            },
-            {
-                "id": "d002",
-                "deptName": "Finance"
-            },
-            ...
-        ]
-    }
-}
-```
-
-3. Get Department by ID  
-
-**Request:**  
+**GraphQL Query:**  
 
 ```graphql
 query GetDepartmentById {
-    getDepartmentById(id: "d001") {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
+  getDepartmentById(id: "d011") {
+    id
+    deptName
+    active
+  }
 }
 ```
 
@@ -449,167 +446,30 @@ query GetDepartmentById {
 
 ```json
 {
-    "data": {
-        "getDepartmentById": {
-            "id": "d001",
-            "deptName": "Marketing",
-            "active": true,
-            "createdBy": 1,
-            "createdDate": "2024-10-07T17:51:24.616Z",
-            "updatedBy": 1,
-            "updatedDate": "2024-11-11T16:58:30.929Z"
-        }
+  "data": {
+    "getDepartmentById": {
+      "id": "d011",
+      "deptName": "Security",
+      "active": true
     }
+  }
 }
 ```
 
-❌ Example: Get Department by Invalid ID  
+#### 4. Update department details  
 
-**Request:**  
-
-```graphql
-query GetDepartmentById {
-    getDepartmentById(id: "xxx") {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-**Response (If Department Not Found):**  
-
-```json
-{
-    "errors": [
-        {
-            "message": "Error getting department by id: Department with id xxx does not exist",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "getDepartmentById"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
-        }
-    ],
-    "data": {
-        "getDepartmentById": null
-    }
-}
-```
-
-❌ Example: Missing Required Field  
-
-**Request:**  
-
-```graphql
-query GetDepartmentById {
-    getDepartmentById(id: "") {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-**Response (Validation Error):**  
-
-```json
-{
-    "errors": [
-        {
-            "message": "Department ID cannot be blank",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "getDepartmentById"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
-        }
-    ],
-    "data": {
-        "getDepartmentById": null
-    }
-}
-```
-
-❌ Example: Invalid Syntax  
-
-**Request:**  
-
-```graphql
-query GetDepartmentById {
-    getDepartmentById() {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-**Response (Invalid Syntax):**  
-
-```json
-{
-    "errors": [
-        {
-            "message": "Invalid syntax with offending token ')' at line 2 column 23",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 23
-                }
-            ],
-            "extensions": {
-                "classification": "InvalidSyntax"
-            }
-        }
-    ]
-}
-```
-
-4. Update an Existing Department  
-
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation UpdateDepartment {
-    updateDepartment(
-        id: "d001"
-        departmentUpdateDTO: { deptName: "Supply & Chain", active: true, updatedBy: "2" }
-    ) {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
+  updateDepartment(
+    id: "d011"
+    input: { deptName: "Operation", active: true, updatedBy: "2" }
+  ) {
+    id
+    deptName
+    active
+  }
 }
 ```
 
@@ -617,75 +477,23 @@ mutation UpdateDepartment {
 
 ```json
 {
-    "data": {
-        "updateDepartment": {
-            "id": "d001",
-            "deptName": "Supply & Chain",
-            "active": true,
-            "createdBy": 1,
-            "createdDate": "2025-04-10T06:25:39.874Z",
-            "updatedBy": 2,
-            "updatedDate": "2025-04-10T14:07:11.223+07:00"
-        }
+  "data": {
+    "updateDepartment": {
+      "id": "d011",
+      "deptName": "Operation",
+      "active": true
     }
+  }
 }
 ```
 
-❌ Example: Update Department by Invalid ID  
+#### 5. Delete departments  
 
-**Request:**  
-
-```graphql
-mutation UpdateDepartment {
-    updateDepartment(
-        id: "xxx"
-        departmentUpdateDTO: { deptName: "Supply & Chain", active: true, updatedBy: "2" }
-    ) {
-        id
-        deptName
-        active
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-**Response (If Department Not Found):**  
-
-```json
-{
-    "errors": [
-        {
-            "message": "Department with id xxx does not exist",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "updateDepartment"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
-        }
-    ],
-    "data": {
-        "updateDepartment": null
-    }
-}
-```
-
-5. Delete a Department  
-
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation DeleteDepartment {
-    deleteDepartment(id: "d001")
+  deleteDepartment(id: "d011")
 }
 ```
 
@@ -693,662 +501,527 @@ mutation DeleteDepartment {
 
 ```json
 {
-    "data": {
-        "deleteDepartment": true
-    }
+  "data": {
+    "deleteDepartment": true
+  }
 }
 ```
 
 
-### Employee Operations  
+### 👨‍💼👩‍💼 Employee API  
 
-The following GraphQL operations allow you to manage employee records along with their department, salary, and title associations.  
+#### 1. Create a new employee with initial department, salary, and title  
 
-1. Save a New Employee  
-
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation SaveEmployee {
-    saveEmployee(
-        employeeCreateDTO: {
-            birthDate: "1990-07-09"
-            firstName: "Jenny"
-            lastName: null
-            gender: "F"
-            hireDate: "2025-01-01"
-            activeStatus: true
-            createdBy: "1"
-            departments: [{
-                departmentId: "d001"
-                fromDate: "2025-01-01"
-                toDate: "2025-03-30"
-            }]
-          	salaries: [{
-                amount: 60116
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
-            titles: [{
-                title: "Senior Engineer"
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
+  saveEmployee(
+    input: {
+      birthDate: "1990-08-01"
+      firstName: "Michael"
+      lastName: "jordan"
+      gender: "M"
+      hireDate: "2000-01-01"
+      active: true
+      createdBy: "1"
+      departments: [
+        { 
+            departmentId: "d001", 
+            fromDate: "2001-01-01", 
+            toDate: "2005-03-30" 
         }
-    ) {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-```
-
-
-**Successful Response:**  
-
-```json
-{
-    "data": {
-        "saveEmployee": {
-            "id": 1,
-            "birthDate": "1990-07-09",
-            "firstName": "Jenny",
-            "lastName": null,
-            "gender": "F",
-            "hireDate": "2025-01-01",
-            "activeStatus": true,
-            "createdBy": 1,
-            "createdDate": "2025-04-10T14:37:03.055+07:00",
-            "updatedBy": 1,
-            "updatedDate": "2025-04-10T14:37:03.055+07:00"
+      ]
+      salaries: [
+        { 
+            amount: 60116, 
+            fromDate: "2001-01-01", 
+            toDate: "2005-12-31" 
         }
-    }
-}
-```
-
-
-❌ Example: Missing First Name  
-
-**Request:**  
-
-```graphql
-mutation SaveEmployee {
-    saveEmployee(
-        employeeCreateDTO: {
-            birthDate: "1990-07-09"
-            firstName: null
-            lastName: null
-            gender: "F"
-            hireDate: "2025-01-01"
-            activeStatus: true
-            createdBy: "1"
-            departments: [{
-                departmentId: "d001"
-                fromDate: "2025-01-01"
-                toDate: "2025-03-30"
-            }]
-          	salaries: [{
-                amount: 60116
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
-            titles: [{
-                title: "Senior Engineer"
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
-        }
-    ) {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-    }
-}
-
-```
-
-**Response:**  
-
-```json
-{
-    "errors": [
+      ]
+      titles: [
         {
-            "message": "[saveEmployee.employeeCreateDTO.firstName] First Name cannot be blank",
-            "locations": [
-                {
-                    "line": 3,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "saveEmployee"
-            ],
-            "extensions": {
-                "classification": "ValidationError"
-            }
+          title: "Senior Engineer"
+          fromDate: "2001-01-01"
+          toDate: "2005-12-31"
         }
-    ],
-    "data": {
-        "saveEmployee": null
+      ]
     }
+  ) {
+    id
+    birthDate
+    firstName
+    lastName
+    gender
+    hireDate
+    active
+    departments {
+      departmentId
+      fromDate
+      toDate
+    }
+    salaries {
+      amount
+      fromDate
+      toDate
+    }
+    titles {
+      title
+      fromDate
+      toDate
+    }
+  }
 }
 ```
-
-
-2. Get All Employees  
-
-✅ Full Fields Retrieval  
-
-You can request all available fields for each employee.  
-
-**Request:**  
-
-```graphql
-query GetAllEmployees {
-    getAllEmployees {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-        departments {
-            departmentId
-            fromDate
-            toDate
-        }
-        salaries {
-            amount
-            fromDate
-            toDate
-        }
-        titles {
-            title
-            fromDate
-            toDate
-        }
-    }
-}
-```
-
 
 **Successful Response:**  
 
 ```json
 {
-    "data": {
-        "getAllEmployees": [
-            {
-                "id": 10001,
-                "birthDate": "1990-07-09",
-                "firstName": "Jenny",
-                "lastName": null,
-                "gender": "F",
-                "hireDate": "2025-01-01",
-                "activeStatus": true,
-                "createdBy": 1,
-                "createdDate": "2025-04-10T07:37:03.055Z",
-                "updatedBy": 1,
-                "updatedDate": "2025-04-10T07:37:03.055Z",
-                "departments": [
-                    {
-                        "departmentId": "d001",
-                        "fromDate": "2025-01-01",
-                        "toDate": "2025-03-30"
-                    }
-                ],
-                "salaries": [
-                    {
-                        "amount": 60116,
-                        "fromDate": "2000-01-01",
-                        "toDate": "2005-12-31"
-                    }
-                ],
-                "titles": [
-                    {
-                        "title": "Senior Engineer",
-                        "fromDate": "2000-01-01",
-                        "toDate": "2005-12-31"
-                    }
-                ]
-            },
-            ...
-        ]
-    }
-}
-```
-
-✅ Partial Fields Retrieval  
-
-**GraphQL** allows you to **fetch only the fields you need**, reducing unnecessary data transfer and improving performance.  
-
-**Request (only id, firstName, departments):**  
-
-```graphql
-query GetAllEmployees {
-    getAllEmployees {
-        id
-        firstName
-        departments {
-            departmentId
-            fromDate
-            toDate
+  "data": {
+    "saveEmployee": {
+      "id": 11,
+      "birthDate": "1990-08-01",
+      "firstName": "Michael",
+      "lastName": "jordan",
+      "gender": "M",
+      "hireDate": "2000-01-01",
+      "active": true,
+      "departments": [
+        {
+          "departmentId": "d001",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-03-30"
         }
+      ],
+      "salaries": [
+        {
+          "amount": 60116,
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        }
+      ],
+      "titles": [
+        {
+          "title": "Senior Engineer",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        }
+      ]
     }
+  }
 }
 ```
 
-**Response:**  
+#### 2. Retrieve an employee by ID and check embedded child collections  
 
-```json
-{
-    "data": {
-        "getAllEmployees": [
-            {
-                "id": 10001,
-                "firstName": "Jenny",
-                "departments": [
-                    {
-                        "departmentId": "d002",
-                        "fromDate": "2025-01-01",
-                        "toDate": "2025-03-30"
-                    }
-                ]
-            },
-            {
-                "id": 10002,
-                "firstName": "Bezalel",
-                "departments": [
-                    {
-                        "departmentId": "d010",
-                        "fromDate": "2024-01-01",
-                        "toDate": "2024-09-30"
-                    }
-                ]
-            },
-            ...
-        ]
-    }
-}
-```
-
-3. Get Employee by ID  
-
-**Request:**  
+**GraphQL Query:**  
 
 ```graphql
 query GetEmployeeById {
-    getEmployeeById(id: "10001") {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-        departments {
-            departmentId
-            fromDate
-            toDate
-        }
-        salaries {
-            amount
-            fromDate
-            toDate
-        }
-        titles {
-            title
-            fromDate
-            toDate
-        }
+  getEmployeeById(id: "11") {
+    id
+    birthDate
+    firstName
+    lastName
+    gender
+    hireDate
+    active
+    departments {
+      departmentId
+      fromDate
+      toDate
     }
+    salaries {
+      amount
+      fromDate
+      toDate
+    }
+    titles {
+      title
+      fromDate
+      toDate
+    }
+  }
 }
-
 ```
-
 
 **Successful Response:**  
 
 ```json
 {
-    "data": {
-        "getEmployeeById": {
-            "id": 10001,
-            "birthDate": "1990-07-09",
-            "firstName": "Jenny",
-            "lastName": null,
-            "gender": "F",
-            "hireDate": "2025-01-01",
-            "activeStatus": true,
-            "createdBy": 1,
-            "createdDate": "2025-04-10T07:37:03.055Z",
-            "updatedBy": 1,
-            "updatedDate": "2025-04-10T07:37:03.055Z",
-            "departments": [
-                {
-                    "departmentId": "d001",
-                    "fromDate": "2025-01-01",
-                    "toDate": "2025-03-30"
-                }
-            ],
-            "salaries": [
-                {
-                    "amount": 60116,
-                    "fromDate": "2000-01-01",
-                    "toDate": "2005-12-31"
-                }
-            ],
-            "titles": [
-                {
-                    "title": "Senior Engineer",
-                    "fromDate": "2000-01-01",
-                    "toDate": "2005-12-31"
-                }
-            ]
-        }
-    }
-}
-```
-
-❌ Example: Invalid ID  
-
-**Request:**  
-
-```graphql
-query GetEmployeeById {
-    getEmployeeById(id: "101100") {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-        departments {
-            departmentId
-            fromDate
-            toDate
-        }
-        salaries {
-            amount
-            fromDate
-            toDate
-        }
-        titles {
-            title
-            fromDate
-            toDate
-        }
-    }
-}
-```
-
-
-**Response (If Department Not Found):**  
-
-```json
-{
-    "errors": [
+  "data": {
+    "getEmployeeById": {
+      "id": 11,
+      "birthDate": "1990-08-01",
+      "firstName": "Michael",
+      "lastName": "jordan",
+      "gender": "M",
+      "hireDate": "2000-01-01",
+      "active": true,
+      "departments": [
         {
-            "message": "Employee with id 101100 does not exist",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "getEmployeeById"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
+          "departmentId": "d001",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-03-30"
         }
-    ],
-    "data": {
-        "getEmployeeById": null
+      ],
+      "salaries": [
+        {
+          "amount": 60116,
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        }
+      ],
+      "titles": [
+        {
+          "title": "Senior Engineer",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        }
+      ]
     }
+  }
 }
 ```
 
+#### 3. Update an employee’s personal info and modify department/salary/title histories  
 
-4. Update an Existing Employee  
-
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation UpdateEmployee {
-    updateEmployee(
-        id: "10001"
-        employeeUpdateDTO: {
-            birthDate: "1990-07-08"
-            activeStatus: false
-            firstName: "Jenny"
-            lastName: "Isabelle"
-            gender: "F"
-            hireDate: "2025-01-01"
-            updatedBy: 1
-            departments: [{
-                departmentId: "d002"
-                fromDate: "2025-01-01"
-                toDate: "2025-03-30"
-            }]
-          	salaries: [{
-                amount: 60117
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
-            titles: [{
-                title: "Senior Engineer"
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
+  updateEmployee(
+    id: 11
+    input: {
+      birthDate: "1990-08-01"
+      firstName: "Michael"
+      lastName: "jordan"
+      gender: "M"
+      hireDate: "2000-01-01"
+      active: true
+      createdBy: "1"
+      departments: [
+        { 
+            departmentId: "d001", 
+            fromDate: "2001-01-01", 
+            toDate: "2005-03-30" 
         }
-    ) {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-        departments {
-            departmentId
-            fromDate
-            toDate
+        { 
+            departmentId: "d002", 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
         }
-        salaries {
-            amount
-            fromDate
-            toDate
+      ]
+      salaries: [
+        { 
+            amount: 60116, 
+            fromDate: "2001-01-01", 
+            toDate: "2005-12-31" 
         }
-        titles {
-            title
-            fromDate
-            toDate
+        { 
+            amount: 78010, 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
         }
+      ]
+      titles: [
+        {
+          title: "Senior Engineer"
+          fromDate: "2001-01-01"
+          toDate: "2005-12-31"
+        }
+        {
+            title: "Lead Engineer", 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
+        }
+      ]
     }
+  ) {
+    id
+    birthDate
+    firstName
+    lastName
+    gender
+    hireDate
+    active
+    departments {
+      departmentId
+      fromDate
+      toDate
+    }
+    salaries {
+      amount
+      fromDate
+      toDate
+    }
+    titles {
+      title
+      fromDate
+      toDate
+    }
+  }
 }
-
 ```
-
 
 **Successful Response:**  
 
 ```json
 {
-    "data": {
-        "updateEmployee": {
-            "id": 10001,
-            "birthDate": "1990-07-08",
-            "firstName": "Jenny",
-            "lastName": "Isabelle",
-            "gender": "F",
-            "hireDate": "2025-01-01",
-            "activeStatus": false,
-            "createdBy": 1,
-            "createdDate": "2025-04-10T07:37:03.055Z",
-            "updatedBy": 1,
-            "updatedDate": "2025-04-10T14:50:00.269+07:00",
-            "departments": [
-                {
-                    "departmentId": "d002",
-                    "fromDate": "2025-01-01",
-                    "toDate": "2025-03-30"
-                }
-            ],
-            "salaries": [
-                {
-                    "amount": 60117,
-                    "fromDate": "2000-01-01",
-                    "toDate": "2005-12-31"
-                }
-            ],
-            "titles": [
-                {
-                    "title": "Senior Engineer",
-                    "fromDate": "2000-01-01",
-                    "toDate": "2005-12-31"
-                }
-            ]
+  "data": {
+    "updateEmployee": {
+      "id": 11,
+      "birthDate": "1990-08-01",
+      "firstName": "Michael",
+      "lastName": "jordan",
+      "gender": "M",
+      "hireDate": "2000-01-01",
+      "active": true,
+      "departments": [
+        {
+          "departmentId": "d001",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-03-30"
+        },
+        {
+          "departmentId": "d002",
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
         }
+      ],
+      "salaries": [
+        {
+          "amount": 60116,
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        },
+        {
+          "amount": 78010,
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
+        }
+      ],
+      "titles": [
+        {
+          "title": "Senior Engineer",
+          "fromDate": "2001-01-01",
+          "toDate": "2005-12-31"
+        },
+        {
+          "title": "Lead Engineer",
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
+        }
+      ]
     }
+  }
 }
 ```
 
-❌ Example: Update Employee by Invalid ID  
+#### 4. Remove one child entity (e.g., one salary history record) during update and ensure proper orphan removal  
 
-**Request:**  
+**GraphQL Mutation:**  
 
 ```graphql
 mutation UpdateEmployee {
-    updateEmployee(
-        id: "100011"
-        employeeUpdateDTO: {
-            birthDate: "1990-07-08"
-            activeStatus: false
-            firstName: "Jenny"
-            lastName: "Isabelle"
-            gender: "F"
-            hireDate: "2025-01-01"
-            updatedBy: 1
-            departments: [{
-                departmentId: "d002"
-                fromDate: "2025-01-01"
-                toDate: "2025-03-30"
-            }]
-          	salaries: [{
-                amount: 60117
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
-            titles: [{
-                title: "Senior Engineer"
-                fromDate: "2000-01-01"
-                toDate: "2005-12-31"
-            }]
+  updateEmployee(
+    id: 11
+    input: {
+      birthDate: "1990-08-01"
+      firstName: "Michael"
+      lastName: "jordan"
+      gender: "M"
+      hireDate: "2000-01-01"
+      active: true
+      createdBy: "1"
+      departments: [
+        { 
+            departmentId: "d002", 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
         }
-    ) {
-        id
-        birthDate
-        firstName
-        lastName
-        gender
-        hireDate
-        activeStatus
-        createdBy
-        createdDate
-        updatedBy
-        updatedDate
-        departments {
-            departmentId
-            fromDate
-            toDate
+      ]
+      salaries: [
+        { 
+            amount: 78010, 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
         }
-        salaries {
-            amount
-            fromDate
-            toDate
+      ]
+      titles: [
+        { 
+            title: "Lead Engineer", 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
         }
-        titles {
-            title
-            fromDate
-            toDate
-        }
+      ]
     }
+  ) {
+    id
+    birthDate
+    firstName
+    lastName
+    gender
+    hireDate
+    active
+    departments {
+      departmentId
+      fromDate
+      toDate
+    }
+    salaries {
+      amount
+      fromDate
+      toDate
+    }
+    titles {
+      title
+      fromDate
+      toDate
+    }
+  }
 }
-
 ```
 
-**Response (If Employee Not Found):**  
+**Successful Response:**  
 
 ```json
 {
-    "errors": [
+  "data": {
+    "updateEmployee": {
+      "id": 11,
+      "birthDate": "1990-08-01",
+      "firstName": "Michael",
+      "lastName": "jordan",
+      "gender": "M",
+      "hireDate": "2000-01-01",
+      "active": true,
+      "departments": [
         {
-            "message": "Employee with id 100011 does not exist",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 5
-                }
-            ],
-            "path": [
-                "updateEmployee"
-            ],
-            "extensions": {
-                "classification": "DataFetchingException"
-            }
+          "departmentId": "d002",
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
         }
-    ],
-    "data": {
-        "updateEmployee": null
+      ],
+      "salaries": [
+        {
+          "amount": 78010,
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
+        }
+      ],
+      "titles": [
+        {
+          "title": "Lead Engineer",
+          "fromDate": "2006-01-01",
+          "toDate": "2007-03-30"
+        }
+      ]
     }
+  }
 }
 ```
 
+#### 5. Attempt to assign employee to non-existent department (should return validation error)  
 
-5. Delete an Employee
+**GraphQL Mutation:**  
 
+```graphql
+mutation UpdateEmployee {
+  updateEmployee(
+    id: 11
+    input: {
+      birthDate: "1990-08-01"
+      firstName: "Michael"
+      lastName: "jordan"
+      gender: "M"
+      hireDate: "2000-01-01"
+      active: true
+      createdBy: "1"
+      departments: [
+        {
+          departmentId: "INVALID_DEPARTMENT"
+          fromDate: "2006-01-01"
+          toDate: "2007-03-30"
+        }
+      ]
+      salaries: [
+        { 
+            amount: 78010, 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
+        }
+      ]
+      titles: [
+        { 
+            title: "Lead Engineer", 
+            fromDate: "2006-01-01", 
+            toDate: "2007-03-30" 
+        }
+      ]
+    }
+  ) {
+    id
+    birthDate
+    firstName
+    lastName
+    gender
+    hireDate
+    active
+    departments {
+      departmentId
+      fromDate
+      toDate
+    }
+    salaries {
+      amount
+      fromDate
+      toDate
+    }
+    titles {
+      title
+      fromDate
+      toDate
+    }
+  }
+}
+```
 
-**Request:**  
+**Successful Response:**  
+
+```json
+{
+  "errors": [
+    {
+      "message": "Department not found: INVALID_DEPARTMENT",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": [
+        "updateEmployee"
+      ],
+      "extensions": {
+        "classification": "DataFetchingException"
+      }
+    }
+  ],
+  "data": {
+    "updateEmployee": null
+  }
+}
+```
+
+#### 6. Delete an employee and verify cascading deletion of related child records  
+
+**GraphQL Mutation:**  
 
 ```graphql
 mutation DeleteEmployee {
-    deleteEmployee(id: "10030")
+  deleteEmployee(id: "11")
 }
 ```
 
@@ -1356,9 +1029,9 @@ mutation DeleteEmployee {
 
 ```json
 {
-    "data": {
-        "deleteEmployee": true
-    }
+  "data": {
+    "deleteEmployee": true
+  }
 }
 ```
 

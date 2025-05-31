@@ -9,8 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import com.yoanesber.graphql_employee_management.entity.TitleEmployee;
-
 /*
  * TitleEmployeeDTO is a Data Transfer Object (DTO) used for managing title employee records.
  * It contains fields that are required when creating or updating title employee records, along with validation annotations.
@@ -32,15 +30,4 @@ public class TitleEmployeeDTO {
 
     @NotNull(message = "To Date cannot be null")
     private Date toDate;
-
-    // Constructor to convert from TitleEmployee entity to TitleEmployeeDTO
-    // This constructor is useful when you want to create a DTO from an existing entity.
-    public TitleEmployeeDTO (TitleEmployee titleEmployee) {
-        if (titleEmployee != null && titleEmployee.getId() != null)  {
-            this.title = titleEmployee.getId().getTitle();
-            this.fromDate = titleEmployee.getId().getFromDate();
-        }
-
-        this.toDate = titleEmployee.getToDate();
-    }
 }

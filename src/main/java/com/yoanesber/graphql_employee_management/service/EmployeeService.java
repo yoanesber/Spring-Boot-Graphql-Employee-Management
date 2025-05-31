@@ -2,22 +2,26 @@ package com.yoanesber.graphql_employee_management.service;
 
 import java.util.List;
 
-import com.yoanesber.graphql_employee_management.dto.EmployeeCreateDTO;
-import com.yoanesber.graphql_employee_management.dto.EmployeeDTO;
-import com.yoanesber.graphql_employee_management.dto.EmployeeUpdateDTO;
+import com.yoanesber.graphql_employee_management.entity.Employee;
+
+/**
+ * Service interface for managing employees.
+ * This interface defines methods for saving, retrieving, updating, and deleting employees.
+ * It provides a contract for the implementation of employee-related business logic.
+ */
 
 public interface EmployeeService {
     // Save employee
-    EmployeeDTO saveEmployee(EmployeeCreateDTO employeeCreateDTO);
+    Employee saveEmployee(Employee employee);
 
     // Get all employees
-    List<EmployeeDTO> getAllEmployees();
+    List<Employee> getAllEmployees();
 
     // Get employee by id
-    EmployeeDTO getEmployeeById(Long id);
+    Employee getEmployeeById(Long id);
 
     // Update employee
-    EmployeeDTO updateEmployee(Long id, EmployeeUpdateDTO employeeUpdateDTO);
+    Employee updateEmployee(Long id, Employee employee);
 
     // Delete employee
     Boolean deleteEmployee(Long id);

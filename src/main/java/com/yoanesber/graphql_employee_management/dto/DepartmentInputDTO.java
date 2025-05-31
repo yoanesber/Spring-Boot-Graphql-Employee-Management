@@ -18,8 +18,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor // Required for Jackson deserialization when receiving JSON requests.
 @AllArgsConstructor // Helps create DTO objects easily (useful when converting from entities).
-public class DepartmentDTO {
+public class DepartmentInputDTO {
     private String id;
     private String deptName;
     private Boolean active;
+    private Long createdBy;
+    private Long updatedBy;
 }

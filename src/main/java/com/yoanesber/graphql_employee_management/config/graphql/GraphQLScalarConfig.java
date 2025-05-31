@@ -1,4 +1,4 @@
-package com.yoanesber.graphql_employee_management.config;
+package com.yoanesber.graphql_employee_management.config.graphql;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

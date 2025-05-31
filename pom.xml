@@ -91,24 +91,27 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<environmentVariables>
-						<!-- # Application environment variables for development -->
-						<APP_PORT>8081</APP_PORT>
-						<SPRING_PROFILES_ACTIVE>development</SPRING_PROFILES_ACTIVE>
-
-						<!-- # Database environment variables for development -->
-						<SPRING_DATASOURCE_PORT>5432</SPRING_DATASOURCE_PORT>
-						<SPRING_DATASOURCE_USERNAME>postgres</SPRING_DATASOURCE_USERNAME>
-						<SPRING_DATASOURCE_PASSWORD>P@ssw0rd</SPRING_DATASOURCE_PASSWORD>
-						<SPRING_DATASOURCE_DB>github_yoanesber</SPRING_DATASOURCE_DB>
-						<SPRING_DATASOURCE_SCHEMA>employees</SPRING_DATASOURCE_SCHEMA>
-
-						<!-- # API Key for development -->
-						<APP_API_KEY>4e1f2d3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9</APP_API_KEY>
-					</environmentVariables>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 		</plugins>

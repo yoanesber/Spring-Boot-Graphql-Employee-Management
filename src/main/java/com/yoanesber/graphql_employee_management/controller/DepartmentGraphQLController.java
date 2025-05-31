@@ -2,8 +2,6 @@ package com.yoanesber.graphql_employee_management.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -11,8 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 
 import com.yoanesber.graphql_employee_management.dto.DepartmentDTO;
-import com.yoanesber.graphql_employee_management.dto.DepartmentCreateDTO;
-import com.yoanesber.graphql_employee_management.dto.DepartmentUpdateDTO;
+import com.yoanesber.graphql_employee_management.dto.DepartmentInputDTO;
+import com.yoanesber.graphql_employee_management.mapper.DepartmentMapper;
 import com.yoanesber.graphql_employee_management.service.DepartmentService;
 
 /**
@@ -27,25 +25,34 @@ import com.yoanesber.graphql_employee_management.service.DepartmentService;
 public class DepartmentGraphQLController {
     private final DepartmentService departmentService;
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
     public DepartmentGraphQLController(DepartmentService departmentService) {
         this.departmentService = departmentService;
     }
 
     @MutationMapping
-    public DepartmentDTO saveDepartment(@Valid @Argument DepartmentCreateDTO departmentCreateDTO) {
+    public DepartmentDTO saveDepartment(@Valid @Argument DepartmentInputDTO input) {
         // Check if the input is null
-        if (departmentCreateDTO == null) {
-            logger.error("DepartmentCreateDTO is null");
-            throw new IllegalArgumentException("DepartmentCreateDTO cannot be null");
+        if (input == null) {
+            throw new IllegalArgumentException("Department body request cannot be null");
         } 
 
+        if (input.getDeptName() == null || input.getDeptName().isBlank()) {
+            throw new IllegalArgumentException("Department name cannot be blank");
+        }
+
         try {
-            // Save and return department
-            return departmentService.saveDepartment(departmentCreateDTO);
+            DepartmentDTO createdDepartment = DepartmentMapper.toDTO(
+                departmentService.saveDepartment(
+                    DepartmentMapper.toEntity(input)
+                )
+            );
+
+            if (createdDepartment == null) {
+                throw new RuntimeException("Failed to create department");
+            }
+
+            return createdDepartment;
         } catch (Exception e) {
-            logger.error("Error saving department: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -53,46 +60,64 @@ public class DepartmentGraphQLController {
     @QueryMapping
     public List<DepartmentDTO> getAllDepartments() {
         try {
-            // Get all departments
-            return departmentService.getAllDepartments();
+            List<DepartmentDTO> departments = DepartmentMapper.toDTOList(
+                departmentService.getAllDepartments()
+            );
+
+            if (departments.isEmpty()) {
+                throw new RuntimeException("No departments found");
+            }
+
+            return departments;
         } catch (Exception e) {
-            logger.error("Error fetching all departments: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @QueryMapping
     public DepartmentDTO getDepartmentById(@Argument String id) {
-        // Check if the input is null
-        if (id.isBlank()) {
-            logger.error("Department ID is blank");
-            throw new IllegalArgumentException("Department ID cannot be blank");
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Department id cannot be null or empty");
         }
 
         try {
-            // Get department by id
             id = id.toLowerCase();
-            return departmentService.getDepartmentById(id);
+            DepartmentDTO department = DepartmentMapper.toDTO(
+                departmentService.getDepartmentById(id)
+            );
+
+            if (department == null) {
+                throw new RuntimeException("Department not found with id: " + id);
+            }
+
+            return department;
         } catch (Exception e) {
-            logger.error("Error fetching department by id: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @MutationMapping
-    public DepartmentDTO updateDepartment(@Argument String id, @Valid @Argument DepartmentUpdateDTO departmentUpdateDTO) {
-        // Check if the input is null
-        if (id.isBlank() || departmentUpdateDTO == null) {
-            logger.error("Department ID or DepartmentUpdateDTO is null");
-            throw new IllegalArgumentException("Department ID and DepartmentUpdateDTO cannot be null");
+    public DepartmentDTO updateDepartment(@Argument String id, @Valid @Argument DepartmentInputDTO input) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Department id request cannot be null");
+        }
+
+        if (input == null) {
+            throw new IllegalArgumentException("Department body request cannot be null");
         }
 
         try {
-            // Update department
             id = id.toLowerCase();
-            return departmentService.updateDepartment(id, departmentUpdateDTO);
+            DepartmentDTO updatedDepartment = DepartmentMapper.toDTO(
+                departmentService.updateDepartment(id, DepartmentMapper.toEntity(input))
+            );
+
+            if (updatedDepartment == null) {
+                throw new RuntimeException("Department not found with id: " + id);
+            }
+
+            return updatedDepartment;
         } catch (Exception e) {
-            logger.error("Error updating department: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -100,18 +125,20 @@ public class DepartmentGraphQLController {
     @MutationMapping
     public Boolean deleteDepartment(@Argument String id) {
         // Check if the input is null
-        if (id.isBlank()) {
-            logger.error("Department ID is blank");
-            throw new IllegalArgumentException("Department ID cannot be blank");
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Department id cannot be blank");
         }
         
         try {
             
             // Delete department
             id = id.toLowerCase();
-            return departmentService.deleteDepartment(id);
+            if (!departmentService.deleteDepartment(id)) {
+                throw new RuntimeException("Department not found with id: " + id);
+            }
+
+            return true;
         } catch (Exception e) {
-            logger.error("Error deleting department: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }

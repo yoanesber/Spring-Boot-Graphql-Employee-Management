@@ -1,26 +1,16 @@
-scalar DateTime
 scalar Long
 
 type DepartmentDTO {
     id: ID
     deptName: String
     active: Boolean
-    createdBy: Long
-    createdDate: DateTime
-    updatedBy: Long
-    updatedDate: DateTime
 }
 
-input DepartmentCreateDTO {
+input DepartmentInputDTO {
     id: ID
     deptName: String
     active: Boolean
     createdBy: Long
-}
-
-input DepartmentUpdateDTO {
-    deptName: String
-    active: Boolean
     updatedBy: Long
 }
 
@@ -30,7 +20,7 @@ type Query {
 }
 
 type Mutation {
-  saveDepartment(departmentCreateDTO: DepartmentCreateDTO!): DepartmentDTO
-  updateDepartment(id: ID!, departmentUpdateDTO: DepartmentUpdateDTO!): DepartmentDTO
+  saveDepartment(input: DepartmentInputDTO!): DepartmentDTO
+  updateDepartment(id: ID!, input: DepartmentInputDTO!): DepartmentDTO
   deleteDepartment(id: ID!): Boolean
 }
