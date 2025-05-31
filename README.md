@@ -353,7 +353,7 @@ All GraphQL requests to this API must include a valid `X-API-KEY` header for aut
 
 All API operations are served through a single HTTP endpoint:
 
-```http
+```bash
 http://localhost:8080/graphql
 ```
 
